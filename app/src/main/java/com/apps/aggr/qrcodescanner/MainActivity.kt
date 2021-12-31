@@ -33,24 +33,28 @@ import com.google.android.gms.vision.barcode.Barcode
 import com.google.android.gms.vision.barcode.BarcodeDetector
 import java.io.IOException
 
-
 class MainActivity : AppCompatActivity(), View.OnClickListener {
 
     private lateinit var barcodeDetector: BarcodeDetector
     private lateinit var cameraSource: CameraSource
     private lateinit var binding: ActivityMainBinding
 
-    private val RequestCameraPermissionID = 1001
-    private val RequestSendSMSPermissionID = 1002
-    private val RequestCallPhonePermissionID = 1003
     private var hasVibrate = true
 
-
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         when (requestCode) {
             RequestCameraPermissionID -> {
                 if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                    if (ActivityCompat.checkSelfPermission(
+                            this,
+                            Manifest.permission.CAMERA
+                        ) != PackageManager.PERMISSION_GRANTED
+                    ) {
                         return
                     }
                     try {
@@ -62,19 +66,35 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
             }
             RequestSendSMSPermissionID -> {
                 if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    if (ActivityCompat.checkSelfPermission(this, Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED) {
+                    if (ActivityCompat.checkSelfPermission(
+                            this,
+                            Manifest.permission.SEND_SMS
+                        ) != PackageManager.PERMISSION_GRANTED
+                    ) {
                         return
                     } else {
-                        Toast.makeText(this, "Intente enviar el mensaje nuevamente por favor", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            this,
+                            "Intente enviar el mensaje nuevamente por favor",
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
                 }
             }
             RequestCallPhonePermissionID -> {
                 if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) {
+                    if (ActivityCompat.checkSelfPermission(
+                            this,
+                            Manifest.permission.CALL_PHONE
+                        ) != PackageManager.PERMISSION_GRANTED
+                    ) {
                         return
                     } else {
-                        Toast.makeText(this, "Intente llamar nuevamente por favor", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            this,
+                            "Intente llamar nuevamente por favor",
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
                 }
             }
@@ -90,20 +110,28 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         binding.cameraPreview.setOnClickListener(this)
 
         barcodeDetector = BarcodeDetector.Builder(this)
-                .setBarcodeFormats(Barcode.QR_CODE)
-                .build()
+            .setBarcodeFormats(Barcode.QR_CODE)
+            .build()
 
         cameraSource = CameraSource.Builder(this, barcodeDetector)
-                .setRequestedPreviewSize(1280, 960)
-                .setAutoFocusEnabled(true)
-                .build()
+            .setRequestedPreviewSize(1280, 960)
+            .setAutoFocusEnabled(true)
+            .build()
 
         //Add Event
         binding.cameraPreview.holder.addCallback(object : SurfaceHolder.Callback {
             override fun surfaceCreated(surfaceHolder: SurfaceHolder) {
-                if (ActivityCompat.checkSelfPermission(applicationContext, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                if (ActivityCompat.checkSelfPermission(
+                        applicationContext,
+                        Manifest.permission.CAMERA
+                    ) != PackageManager.PERMISSION_GRANTED
+                ) {
                     //Request permission
-                    ActivityCompat.requestPermissions(this@MainActivity, arrayOf(Manifest.permission.CAMERA), RequestCameraPermissionID)
+                    ActivityCompat.requestPermissions(
+                        this@MainActivity,
+                        arrayOf(Manifest.permission.CAMERA),
+                        RequestCameraPermissionID
+                    )
                     return
                 }
                 try {
@@ -114,6 +142,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
             }
 
             override fun surfaceChanged(surfaceHolder: SurfaceHolder, i: Int, i1: Int, i2: Int) {}
+
             override fun surfaceDestroyed(surfaceHolder: SurfaceHolder) {
                 cameraSource.stop()
             }
@@ -123,25 +152,28 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
 
             @RequiresApi(Build.VERSION_CODES.O)
             override fun receiveDetections(detections: Detections<Barcode>) {
-                val qrcodes = detections.detectedItems
-                if (qrcodes.size() != 0 && hasVibrate) {
+                val qrCodes = detections.detectedItems
+                if (qrCodes.size() != 0 && hasVibrate) {
                     binding.txtResult.post {
-                        val vibrator: Vibrator = applicationContext.getSystemService(VIBRATOR_SERVICE) as Vibrator
+                        val vibrator: Vibrator =
+                            applicationContext.getSystemService(VIBRATOR_SERVICE) as Vibrator
                         vibrator.vibrate(VibrationEffect.createOneShot(500, 1))
                         hasVibrate = false
 
-                        val barcode: Barcode = qrcodes.valueAt(0)
+                        val barcode: Barcode = qrCodes.valueAt(0)
 
                         val layout = binding.lyItems
 
-                        when(barcode.valueFormat){
+                        when (barcode.valueFormat) {
                             Barcode.EMAIL -> {
                                 barcode.email?.let {
                                     layout.removeAllViews()
-                                    val view = LayoutInflater.from(applicationContext).inflate(R.layout.item_email, null)
+                                    val view = LayoutInflater.from(applicationContext)
+                                        .inflate(R.layout.item_email, null)
                                     val tvContacto = view.findViewById<TextView>(R.id.tv_contacto)
                                     val tvAsunto = view.findViewById<TextView>(R.id.tv_asunto)
-                                    val tvMensaje = view.findViewById<TextView>(R.id.tv_cuerpoMensaje)
+                                    val tvMensaje =
+                                        view.findViewById<TextView>(R.id.tv_cuerpoMensaje)
                                     val btnEnviar = view.findViewById<Button>(R.id.btn_enviarEmail)
 
                                     tvContacto.text = it.address
@@ -149,7 +181,11 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                                     tvMensaje.text = it.body
 
                                     btnEnviar.setOnClickListener {
-                                        sendEmail(arrayOf(tvContacto.text.toString()), tvAsunto.text.toString() ,tvMensaje.text.toString())
+                                        sendEmail(
+                                            arrayOf(tvContacto.text.toString()),
+                                            tvAsunto.text.toString(),
+                                            tvMensaje.text.toString()
+                                        )
                                     }
 
                                     layout.addView(view)
@@ -158,7 +194,8 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                             Barcode.URL -> {
                                 barcode.url?.let {
                                     layout.removeAllViews()
-                                    val view = LayoutInflater.from(applicationContext).inflate(R.layout.item_url, null)
+                                    val view = LayoutInflater.from(applicationContext)
+                                        .inflate(R.layout.item_url, null)
                                     val tvUrl = view.findViewById<TextView>(R.id.tv_url)
                                     val abrirLink = view.findViewById<Button>(R.id.btn_abrirUrl)
 
@@ -176,7 +213,8 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                             Barcode.PHONE -> {
                                 barcode.phone?.let {
                                     layout.removeAllViews()
-                                    val view = LayoutInflater.from(applicationContext).inflate(R.layout.item_phone, null)
+                                    val view = LayoutInflater.from(applicationContext)
+                                        .inflate(R.layout.item_phone, null)
                                     val tvPhone = view.findViewById<TextView>(R.id.tv_phone)
                                     val btnCall = view.findViewById<Button>(R.id.btn_llamar)
 
@@ -185,10 +223,17 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                                     btnCall.setOnClickListener {
                                         val i = Intent(Intent.ACTION_CALL)
                                         i.data = Uri.parse("tel:$phone");
-                                        if (ActivityCompat.checkSelfPermission(applicationContext, Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) {
-                                            ActivityCompat.requestPermissions(this@MainActivity, arrayOf(Manifest.permission.CALL_PHONE), RequestSendSMSPermissionID)
-                                        }
-                                        else {
+                                        if (ActivityCompat.checkSelfPermission(
+                                                applicationContext,
+                                                Manifest.permission.CALL_PHONE
+                                            ) != PackageManager.PERMISSION_GRANTED
+                                        ) {
+                                            ActivityCompat.requestPermissions(
+                                                this@MainActivity,
+                                                arrayOf(Manifest.permission.CALL_PHONE),
+                                                RequestSendSMSPermissionID
+                                            )
+                                        } else {
                                             startActivity(i);
                                         }
                                     }
@@ -198,7 +243,8 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                             Barcode.SMS -> {
                                 barcode.sms?.let {
                                     layout.removeAllViews()
-                                    val view = LayoutInflater.from(applicationContext).inflate(R.layout.item_sms, null)
+                                    val view = LayoutInflater.from(applicationContext)
+                                        .inflate(R.layout.item_sms, null)
                                     val tvContacto = view.findViewById<TextView>(R.id.tv_contacto)
                                     val tvMensaje = view.findViewById<TextView>(R.id.tv_mensaje)
                                     val btnEnviar = view.findViewById<Button>(R.id.btn_enviarSms)
@@ -207,7 +253,10 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                                     tvMensaje.text = it.message
 
                                     btnEnviar.setOnClickListener {
-                                        sendSMS(tvContacto.text.toString(), tvMensaje.text.toString())
+                                        sendSMS(
+                                            tvContacto.text.toString(),
+                                            tvMensaje.text.toString()
+                                        )
                                     }
 
                                     layout.addView(view)
@@ -227,7 +276,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
     }
 
     override fun onClick(view: View?) {
-        when(view?.id){
+        when (view?.id) {
             R.id.cameraPreview -> {
                 hasVibrate = true
             }
@@ -235,27 +284,36 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
-    private fun addWifi(ssid: String, pass: String, encryptionType: Int){
+    private fun addWifi(ssid: String, pass: String, encryptionType: Int) {
 
         val wifiNetworkSpecifier = WifiNetworkSpecifier.Builder()
-                .setSsid(ssid)
-                .setWpa2Passphrase(pass)
-                .build()
+            .setSsid(ssid)
+            .setWpa2Passphrase(pass)
+            .build()
 
         val networkRequest = NetworkRequest.Builder()
-                .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
-                .setNetworkSpecifier(wifiNetworkSpecifier)
-                .build()
+            .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
+            .setNetworkSpecifier(wifiNetworkSpecifier)
+            .build()
 
-        val connectivityManager = this.applicationContext.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val connectivityManager =
+            this.applicationContext.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         connectivityManager.requestNetwork(networkRequest, NetworkCallback())
 
     }
 
     private fun sendSMS(phoneNo: String, msg: String) {
         try {
-            if (ActivityCompat.checkSelfPermission(applicationContext, Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(this@MainActivity, arrayOf(Manifest.permission.SEND_SMS), RequestSendSMSPermissionID)
+            if (ActivityCompat.checkSelfPermission(
+                    applicationContext,
+                    Manifest.permission.SEND_SMS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                ActivityCompat.requestPermissions(
+                    this@MainActivity,
+                    arrayOf(Manifest.permission.SEND_SMS),
+                    RequestSendSMSPermissionID
+                )
                 return
             }
             val smsManager: SmsManager = SmsManager.getDefault()
@@ -272,13 +330,19 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         }
     }
 
-    private fun sendEmail(emails: Array<String>, subject: String, body: String){
+    private fun sendEmail(emails: Array<String>, subject: String, body: String) {
         val mailer = Intent(Intent.ACTION_SEND)
         mailer.type = "message/rfc822"
         mailer.putExtra(Intent.EXTRA_EMAIL, emails)
         mailer.putExtra(Intent.EXTRA_SUBJECT, subject)
         mailer.putExtra(Intent.EXTRA_TEXT, body)
         startActivity(Intent.createChooser(mailer, "Send email..."))
+    }
+
+    companion object {
+        private const val RequestCameraPermissionID = 1001
+        private const val RequestSendSMSPermissionID = 1002
+        private const val RequestCallPhonePermissionID = 1003
     }
 
 }

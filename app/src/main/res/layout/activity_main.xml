@@ -9,19 +9,14 @@
         android:layout_height="match_parent"
         tools:context=".MainActivity">
 
-
         <SurfaceView
             android:id="@+id/cameraPreview"
-            android:layout_width="0dp"
-            android:layout_height="240dp"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
             android:layout_centerInParent="true"
-            android:layout_marginStart="8dp"
-            android:layout_marginTop="16dp"
-            android:layout_marginEnd="8dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/txtResult" />
-
 
         <TextView
             android:id="@+id/txtResult"
@@ -35,6 +30,8 @@
             android:gravity="center_horizontal"
             android:text="@string/result_text_default"
             android:textSize="20sp"
+            android:textColor="@android:color/white"
+            android:textStyle="bold"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
@@ -43,13 +40,11 @@
             android:id="@+id/ly_items"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_marginTop="16dp"
-            android:layout_marginEnd="8dp"
+            android:layout_marginBottom="8dp"
             android:orientation="vertical"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/cameraPreview" />
+            app:layout_constraintStart_toStartOf="parent" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>
