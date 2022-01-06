@@ -1,4 +1,19 @@
 <resources>
     <string name="app_name">QR Code Scanner</string>
     <string name="result_text_default">Please focus camera to QR Code</string>
+    <string name="emails">Email(s):</string>
+    <string name="subject">Asunto:</string>
+    <string name="email_message">Mensaje:</string>
+    <string name="send_email">Enviar email</string>
+    <string name="text">text:</string>
+    <string name="copy_text">Copiar texto...</string>
+    <string name="open_link">Abrir link...</string>
+    <string name="url">url:</string>
+    <string name="call">Llamar...</string>
+    <string name="phone">Télefono:</string>
+    <string name="try_send_message_again">Intente enviar el mensaje nuevamente por favor</string>
+    <string name="try_call_again">Intente llamar nuevamente por favor</string>
+    <string name="contact">Contacto:</string>
+    <string name="message">Mensaje:</string>
+    <string name="send_sms">Enviar sms...</string>
 </resources>

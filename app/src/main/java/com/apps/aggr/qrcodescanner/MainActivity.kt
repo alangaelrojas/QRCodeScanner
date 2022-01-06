@@ -1,6 +1,7 @@
 package com.apps.aggr.qrcodescanner
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -18,20 +19,22 @@ import android.os.Bundle
 import android.telephony.SmsManager
 import android.view.LayoutInflater
 import android.view.SurfaceHolder
-import android.widget.Button
-import android.widget.TextView
+import android.view.Window
+import android.view.WindowManager
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.util.isEmpty
-import com.apps.aggr.qrcodescanner.databinding.ActivityMainBinding
+import com.apps.aggr.qrcodescanner.databinding.*
+import com.apps.aggr.qrcodescanner.utils.animateUp
 import com.google.android.gms.vision.CameraSource
 import com.google.android.gms.vision.Detector
 import com.google.android.gms.vision.Detector.Detections
 import com.google.android.gms.vision.barcode.Barcode
 import com.google.android.gms.vision.barcode.BarcodeDetector
 
+@SuppressLint("SetTextI18n")
 class MainActivity : AppCompatActivity() {
 
     private lateinit var barcodeDetector: BarcodeDetector
@@ -58,7 +61,7 @@ class MainActivity : AppCompatActivity() {
                     } else {
                         Toast.makeText(
                             this,
-                            "Intente enviar el mensaje nuevamente por favor",
+                            getString(R.string.try_send_message_again),
                             Toast.LENGTH_SHORT
                         ).show()
                     }
@@ -72,7 +75,7 @@ class MainActivity : AppCompatActivity() {
                     } else {
                         Toast.makeText(
                             this,
-                            "Intente llamar nuevamente por favor",
+                            getText(R.string.try_call_again),
                             Toast.LENGTH_SHORT
                         ).show()
                     }
@@ -85,6 +88,13 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         binding = ActivityMainBinding.inflate(layoutInflater)
+
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
+        window.setFlags(
+            WindowManager.LayoutParams.FLAG_FULLSCREEN,
+            WindowManager.LayoutParams.FLAG_FULLSCREEN
+        );
+
         setContentView(binding.root)
 
         barcodeDetector = BarcodeDetector.Builder(this)
@@ -109,6 +119,7 @@ class MainActivity : AppCompatActivity() {
 
         val processor = object : Detector.Processor<Barcode> {
             override fun release() {}
+
             override fun receiveDetections(detections: Detections<Barcode>) {
                 val qrCodes = detections.detectedItems
                 if (qrCodes.isEmpty()) {
@@ -126,142 +137,113 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun performActionWithBarcode(barcode: Barcode) {
-        val layout = binding.lyItems
         when (barcode.valueFormat) {
-            Barcode.EMAIL -> {
-                barcode.email?.let {
-                    layout.removeAllViews()
-                    val view = LayoutInflater.from(applicationContext)
-                        .inflate(R.layout.item_email, null)
-                    val tvContacto = view.findViewById<TextView>(R.id.tv_contacto)
-                    val tvAsunto = view.findViewById<TextView>(R.id.tv_asunto)
-                    val tvMensaje =
-                        view.findViewById<TextView>(R.id.tv_cuerpoMensaje)
-                    val btnEnviar = view.findViewById<Button>(R.id.btn_enviarEmail)
-
-                    tvContacto.text = it.address
-                    tvAsunto.text = it.subject
-                    tvMensaje.text = it.body
-
-                    btnEnviar.setOnClickListener {
-                        sendEmail(
-                            arrayOf(tvContacto.text.toString()),
-                            tvAsunto.text.toString(),
-                            tvMensaje.text.toString()
-                        )
-                    }
-
-                    layout.addView(view)
-                }
-            }
-            Barcode.URL -> {
-                barcode.url?.let {
-                    layout.removeAllViews()
-                    val view = LayoutInflater.from(applicationContext)
-                        .inflate(R.layout.item_url, null)
-                    val tvUrl = view.findViewById<TextView>(R.id.tv_url)
-                    val abrirLink = view.findViewById<Button>(R.id.btn_abrirUrl)
-
-                    tvUrl.text = it.url
-                    val url: String = it.url
-
-                    abrirLink.setOnClickListener {
-                        val i = Intent(Intent.ACTION_VIEW)
-                        i.data = Uri.parse(url)
-                        startActivity(i)
-                    }
-                    layout.addView(view)
-                }
-            }
-            Barcode.PHONE -> {
-                barcode.phone?.let {
-                    layout.removeAllViews()
-                    val view = LayoutInflater.from(applicationContext)
-                        .inflate(R.layout.item_phone, null)
-                    val tvPhone = view.findViewById<TextView>(R.id.tv_phone)
-                    val btnCall = view.findViewById<Button>(R.id.btn_llamar)
-
-                    tvPhone.text = it.number
-                    val phone = "+52 ${it.number}"
-                    btnCall.setOnClickListener {
-                        val i = Intent(Intent.ACTION_CALL)
-                        i.data = Uri.parse("tel:$phone");
-                        if (ActivityCompat.checkSelfPermission(
-                                applicationContext,
-                                Manifest.permission.CALL_PHONE
-                            ) != PackageManager.PERMISSION_GRANTED
-                        ) {
-                            ActivityCompat.requestPermissions(
-                                this@MainActivity,
-                                arrayOf(Manifest.permission.CALL_PHONE),
-                                RequestSendSMSPermissionID
-                            )
-                        } else {
-                            startActivity(i);
-                        }
-                    }
-                    layout.addView(view)
-                }
-            }
-            Barcode.SMS -> {
-                barcode.sms?.let {
-                    layout.removeAllViews()
-                    val view = LayoutInflater.from(applicationContext)
-                        .inflate(R.layout.item_sms, null)
-                    val tvContacto = view.findViewById<TextView>(R.id.tv_contacto)
-                    val tvMensaje = view.findViewById<TextView>(R.id.tv_mensaje)
-                    val btnEnviar = view.findViewById<Button>(R.id.btn_enviarSms)
-
-                    tvContacto.text = it.phoneNumber
-                    tvMensaje.text = it.message
-
-                    btnEnviar.setOnClickListener {
-                        sendSMS(
-                            tvContacto.text.toString(),
-                            tvMensaje.text.toString()
-                        )
-                    }
-
-                    layout.addView(view)
-                }
-            }
-            Barcode.WIFI -> {
-                barcode.wifi?.let { wifi ->
-                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
-                        layout.removeAllViews()
-                        val view = LayoutInflater.from(applicationContext)
-                            .inflate(R.layout.item_text, null)
-                        val tvText = view.findViewById<TextView>(R.id.tv_text)
-                        val copyText = view.findViewById<Button>(R.id.btn_copyText)
-
-                        tvText.text = wifi.ssid + "\n" + wifi.password
-
-                        copyText.setOnClickListener {
-                            copyTextToClipboard(wifi.password)
-                        }
-                        layout.addView(view)
-                        return
-                    }
-                    addWifi(wifi)
-                }
-            }
-            else -> {
-                barcode.displayValue?.let { text ->
-                    layout.removeAllViews()
-                    val view = LayoutInflater.from(applicationContext)
-                        .inflate(R.layout.item_text, null)
-                    val tvText = view.findViewById<TextView>(R.id.tv_text)
-                    val copyText = view.findViewById<Button>(R.id.btn_copyText)
-
-                    tvText.text = text
-
-                    copyText.setOnClickListener {
-                        copyTextToClipboard(text)
-                    }
-                    layout.addView(view)
-                }
-            }
+            Barcode.EMAIL -> processBarcodeAsEmail(barcode.email)
+            Barcode.URL -> processBarcodeAsUrl(barcode.url)
+            Barcode.PHONE -> processBarcodeAsPhone(barcode.phone)
+            Barcode.SMS -> processBarcodeAsSms(barcode.sms)
+            Barcode.WIFI -> processBarcodeAsWifi(barcode.wifi)
+            else -> processBarcodeAsText(barcode.displayValue)
         }
+    }
+
+    //region BarcodeOperations
+    private fun processBarcodeAsEmail(email: Barcode.Email) {
+        val layout = binding.lyItems
+        val inflater = LayoutInflater.from(applicationContext)
+        layout.removeAllViews()
+        val binding = ItemEmailBinding.inflate(inflater)
+        val address = email.address
+        val subject = email.subject
+        val bodyMessage = email.body
+        binding.tvResultEmails.text = address
+        binding.tvResultSubject.text = subject
+        binding.tvResultMessage.text = bodyMessage
+        binding.btnSendEmail.setOnClickListener {
+            sendEmail(
+                arrayOf(address),
+                subject,
+                bodyMessage
+            )
+        }
+        layout.addView(binding.root)
+        layout.animateUp(this)
+    }
+
+    private fun processBarcodeAsUrl(url: Barcode.UrlBookmark) {
+        val layout = binding.lyItems
+        val inflater = LayoutInflater.from(applicationContext)
+        layout.removeAllViews()
+        val binding = ItemUrlBinding.inflate(inflater)
+        binding.tvResultUrl.text = url.url
+        binding.btnOpenUrl.setOnClickListener {
+            openUrl(url)
+        }
+        layout.addView(binding.root)
+        layout.animateUp(this)
+    }
+
+    private fun processBarcodeAsPhone(phone: Barcode.Phone) {
+        val layout = binding.lyItems
+        val inflater = LayoutInflater.from(applicationContext)
+        layout.removeAllViews()
+        val binding = ItemPhoneBinding.inflate(inflater)
+        binding.tvResultPhone.text = phone.number
+        val phoneNumber = "+52 ${phone.number}"
+        binding.btnCall.setOnClickListener {
+            makeCall(phoneNumber)
+        }
+        layout.addView(binding.root)
+        layout.animateUp(this)
+    }
+
+    private fun processBarcodeAsWifi(wifi: Barcode.WiFi) {
+        val layout = binding.lyItems
+        val inflater = LayoutInflater.from(applicationContext)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            addWifi(wifi)
+            return
+        }
+        layout.removeAllViews()
+        val binding = ItemTextBinding.inflate(inflater)
+        binding.tvResultText.text = wifi.ssid + "\n" + wifi.password
+        binding.btnCopyText.setOnClickListener {
+            copyTextToClipboard(wifi.password)
+        }
+        layout.addView(binding.root)
+    }
+
+    private fun processBarcodeAsText(text: String) {
+        val layout = binding.lyItems
+        val inflater = LayoutInflater.from(applicationContext)
+        layout.removeAllViews()
+        val binding = ItemTextBinding.inflate(inflater)
+        binding.tvResultText.text = text
+        binding.btnCopyText.setOnClickListener {
+            copyTextToClipboard(text)
+        }
+        layout.addView(binding.root)
+        layout.animateUp(this)
+    }
+
+    private fun processBarcodeAsSms(sms: Barcode.Sms) {
+        val layout = binding.lyItems
+        val inflater = LayoutInflater.from(applicationContext)
+        layout.removeAllViews()
+        val binding = ItemSmsBinding.inflate(inflater)
+
+        val phoneNumber = sms.phoneNumber
+        val message = sms.message
+
+        binding.tvResultContact.text = phoneNumber
+        binding.tvResultMessage.text = message
+
+        binding.btnSendSms.setOnClickListener {
+            sendSMS(phoneNumber, message)
+        }
+
+        layout.addView(binding.root)
+        layout.animateUp(this)
     }
 
     @RequiresApi(Build.VERSION_CODES.Q)
@@ -286,9 +268,20 @@ class MainActivity : AppCompatActivity() {
 
     }
 
-    private fun sendSMS(phoneNo: String, msg: String) {
+    private fun makeCall(phoneNumber: String) {
+        if (isPermissionNotGranted(Manifest.permission.CALL_PHONE)) {
+            requestPermissions(RequestCallPhonePermissionID, Manifest.permission.CALL_PHONE)
+            return
+        }
+
+        val i = Intent(Intent.ACTION_CALL)
+        i.data = Uri.parse("tel:$phoneNumber")
+        startActivity(i);
+    }
+
+    private fun sendSMS(phoneNumber: String, message: String) {
         if (isPermissionNotGranted(Manifest.permission.SEND_SMS)) {
-            requestPermissions(Manifest.permission.SEND_SMS)
+            requestPermissions(RequestSendSMSPermissionID, Manifest.permission.SEND_SMS)
             return
         }
 
@@ -297,7 +290,7 @@ class MainActivity : AppCompatActivity() {
         val sent = "SMS_SENT"
 
         pendingIntent = PendingIntent.getBroadcast(this, 0, Intent(sent), 0)
-        smsManager.sendTextMessage(phoneNo, null, msg, pendingIntent, null);
+        smsManager.sendTextMessage(phoneNumber, null, message, pendingIntent, null);
     }
 
     private fun sendEmail(emails: Array<String>, subject: String, body: String) {
@@ -310,11 +303,26 @@ class MainActivity : AppCompatActivity() {
         startActivity(Intent.createChooser(mailer, "Send email..."))
     }
 
-    private fun requestPermissions(vararg permissions: String) {
+    private fun copyTextToClipboard(textToCopy: String) {
+        val clipboardManager = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        val clipData = ClipData.newPlainText("text", textToCopy)
+        clipboardManager.setPrimaryClip(clipData)
+        Toast.makeText(this, "Text copied to clipboard", Toast.LENGTH_LONG).show()
+    }
+
+    private fun openUrl(url: Barcode.UrlBookmark) {
+        val i = Intent(Intent.ACTION_VIEW)
+        i.data = Uri.parse(url.url)
+        startActivity(i)
+    }
+    //endregion
+
+    //region Permissions
+    private fun requestPermissions(requestCode: Int, vararg permissions: String) {
         ActivityCompat.requestPermissions(
             this@MainActivity,
             permissions,
-            RequestSendSMSPermissionID
+            requestCode
         )
     }
 
@@ -327,6 +335,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun isPermissionGranted(grantResults: IntArray): Boolean =
         grantResults[0] == PackageManager.PERMISSION_GRANTED
+    //endregion
 
     private fun startCamera() {
         if (ActivityCompat.checkSelfPermission(
@@ -334,17 +343,10 @@ class MainActivity : AppCompatActivity() {
                 Manifest.permission.CAMERA
             ) != PackageManager.PERMISSION_GRANTED
         ) {
-            requestPermissions(Manifest.permission.CAMERA)
+            requestPermissions(RequestCameraPermissionID, Manifest.permission.CAMERA)
             return
         }
         cameraSource.start(binding.cameraPreview.holder)
-    }
-
-    private fun copyTextToClipboard(textToCopy: String) {
-        val clipboardManager = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        val clipData = ClipData.newPlainText("text", textToCopy)
-        clipboardManager.setPrimaryClip(clipData)
-        Toast.makeText(this, "Text copied to clipboard", Toast.LENGTH_LONG).show()
     }
 
     companion object {
