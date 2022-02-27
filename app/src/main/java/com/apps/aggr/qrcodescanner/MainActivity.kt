@@ -8,6 +8,7 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.Resources
 import android.net.ConnectivityManager
 import android.net.ConnectivityManager.NetworkCallback
 import android.net.NetworkCapabilities
@@ -20,7 +21,7 @@ import android.telephony.SmsManager
 import android.view.LayoutInflater
 import android.view.SurfaceHolder
 import android.view.Window
-import android.view.WindowManager
+import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
@@ -30,9 +31,9 @@ import com.apps.aggr.qrcodescanner.databinding.*
 import com.apps.aggr.qrcodescanner.utils.animateUp
 import com.google.android.gms.vision.CameraSource
 import com.google.android.gms.vision.Detector
-import com.google.android.gms.vision.Detector.Detections
 import com.google.android.gms.vision.barcode.Barcode
 import com.google.android.gms.vision.barcode.BarcodeDetector
+import java.util.*
 
 @SuppressLint("SetTextI18n")
 class MainActivity : AppCompatActivity() {
@@ -40,6 +41,12 @@ class MainActivity : AppCompatActivity() {
     private lateinit var barcodeDetector: BarcodeDetector
     private lateinit var cameraSource: CameraSource
     private lateinit var binding: ActivityMainBinding
+
+    private val screenWidth: Int
+        get() = Resources.getSystem().displayMetrics.widthPixels
+
+    private val screenHeight: Int
+        get() = Resources.getSystem().displayMetrics.heightPixels
 
     override fun onRequestPermissionsResult(
         requestCode: Int,
@@ -89,11 +96,7 @@ class MainActivity : AppCompatActivity() {
 
         binding = ActivityMainBinding.inflate(layoutInflater)
 
-        requestWindowFeature(Window.FEATURE_NO_TITLE);
-        window.setFlags(
-            WindowManager.LayoutParams.FLAG_FULLSCREEN,
-            WindowManager.LayoutParams.FLAG_FULLSCREEN
-        );
+        requestWindowFeature(Window.FEATURE_NO_TITLE)
 
         setContentView(binding.root)
 
@@ -102,7 +105,7 @@ class MainActivity : AppCompatActivity() {
             .build()
 
         cameraSource = CameraSource.Builder(this, barcodeDetector)
-            .setRequestedPreviewSize(1280, 960)
+            .setRequestedPreviewSize(screenHeight, screenWidth)
             .setAutoFocusEnabled(true)
             .build()
 
@@ -112,6 +115,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             override fun surfaceChanged(surfaceHolder: SurfaceHolder, i: Int, i1: Int, i2: Int) {}
+
             override fun surfaceDestroyed(surfaceHolder: SurfaceHolder) {
                 cameraSource.stop()
             }
@@ -120,11 +124,11 @@ class MainActivity : AppCompatActivity() {
         val processor = object : Detector.Processor<Barcode> {
             override fun release() {}
 
-            override fun receiveDetections(detections: Detections<Barcode>) {
+            override fun receiveDetections(detections: Detector.Detections<Barcode>) {
                 val qrCodes = detections.detectedItems
-                if (qrCodes.isEmpty()) {
+                if (qrCodes.isEmpty())
                     return
-                }
+
                 binding.txtResult.post {
                     val barcode: Barcode = qrCodes.valueAt(0)
                     performActionWithBarcode(barcode)
@@ -134,6 +138,7 @@ class MainActivity : AppCompatActivity() {
 
         binding.cameraPreview.holder.addCallback(callback)
         barcodeDetector.setProcessor(processor)
+
     }
 
     private fun performActionWithBarcode(barcode: Barcode) {
@@ -147,7 +152,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    //region BarcodeOperations
+    //region Barcode Operations
     private fun processBarcodeAsEmail(email: Barcode.Email) {
         val layout = binding.lyItems
         val inflater = LayoutInflater.from(applicationContext)
@@ -239,7 +244,7 @@ class MainActivity : AppCompatActivity() {
         binding.tvResultMessage.text = message
 
         binding.btnSendSms.setOnClickListener {
-            sendSMS(phoneNumber, message)
+            sendSMS(phoneNumber, message, layout)
         }
 
         layout.addView(binding.root)
@@ -250,7 +255,6 @@ class MainActivity : AppCompatActivity() {
     private fun addWifi(barcodeWifi: Barcode.WiFi) {
         val ssid: String = barcodeWifi.ssid
         val pass: String = barcodeWifi.password
-        val encryptionType: Int = barcodeWifi.encryptionType
 
         val wifiNetworkSpecifier = WifiNetworkSpecifier.Builder()
             .setSsid(ssid)
@@ -276,10 +280,10 @@ class MainActivity : AppCompatActivity() {
 
         val i = Intent(Intent.ACTION_CALL)
         i.data = Uri.parse("tel:$phoneNumber")
-        startActivity(i);
+        startActivity(i)
     }
 
-    private fun sendSMS(phoneNumber: String, message: String) {
+    private fun sendSMS(phoneNumber: String, message: String, linearLayout: LinearLayout) {
         if (isPermissionNotGranted(Manifest.permission.SEND_SMS)) {
             requestPermissions(RequestSendSMSPermissionID, Manifest.permission.SEND_SMS)
             return
@@ -290,7 +294,9 @@ class MainActivity : AppCompatActivity() {
         val sent = "SMS_SENT"
 
         pendingIntent = PendingIntent.getBroadcast(this, 0, Intent(sent), 0)
-        smsManager.sendTextMessage(phoneNumber, null, message, pendingIntent, null);
+        smsManager.sendTextMessage(phoneNumber, null, message, pendingIntent, null)
+        Toast.makeText(this, getString(R.string.sms_sent), Toast.LENGTH_SHORT).show()
+        linearLayout.removeAllViews()
     }
 
     private fun sendEmail(emails: Array<String>, subject: String, body: String) {
@@ -312,7 +318,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun openUrl(url: Barcode.UrlBookmark) {
         val i = Intent(Intent.ACTION_VIEW)
-        i.data = Uri.parse(url.url)
+        val urlLowerCased = url.url.lowercase()
+        i.data = Uri.parse(urlLowerCased)
         startActivity(i)
     }
     //endregion
